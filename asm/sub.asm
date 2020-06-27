@@ -13,9 +13,6 @@ _start:
                 lea             rsi, [rsp + 256 * 8]
                 lea             r10, [rsp + 2 * 256 * 8]
                 lea             r11, [rsp + 4 * 256 * 8]
-                ;call            mul_long_long
-
-                ;call            add_long_long
                 call            sub_long_long
                 call            write_long
 
