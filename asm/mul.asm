@@ -3,10 +3,9 @@
                 global          _start
 _start:
 
-
                 sub             rsp, 6 * 256 * 8
                 lea             rdi, [rsp + 256 * 8]
-                mov             rcx, 256
+                mov             rcx, 128
                 call            read_long
                 mov             rdi, rsp
                 call            read_long
@@ -315,22 +314,22 @@ invalid_char_msg_size: equ             $ - invalid_char_msg
 ; copies long to long
 ;   r14 -- address of num1 (long number)
 ;   rdi -- address of num2 (long number)
-;   r12 -- length of numbers in qwords
+;   rcx -- length of numbers in qwords
 ; result:
 ;   [r14] = [rdi]
 copy_long_long:
                 push            r14
                 push            rdi
-                push            r12
+                push            rcx
 .loop:
                 mov             rax, [rdi]
                 lea             rdi, [rdi + 8]
                 mov             [r14], rax
                 lea             r14, [r14 + 8]
-                dec             r12
+                dec             rcx
                 jnz             .loop
 
-                pop             r12
+                pop             rcx
                 pop             rdi
                 pop             r14
                 ret
@@ -342,26 +341,22 @@ copy_long_long:
 ; result:
 ;   [rdi] = [rdi] * [rsi]
 mul_long_long:
-                push            rdi
                 push            rsi
-                push            rcx
 
-                mov             rcx, 512
-                ;
+                mov             rcx, 256
+
                 push            rdi
                 mov             rdi, r10
                 call            set_zero
                 pop             rdi
-                ;
-                mov             r12, 256
-                mov             r15, 256
+
+                mov             r15, 128
                 mov             r14, r11
 .loop:
                 push            rdi
                 mov             rdi, r11
                 call            set_zero
                 pop             rdi
-
 
                 call            copy_long_long
                 mov             rbx, [rsi]
@@ -383,9 +378,7 @@ mul_long_long:
                 dec             r15
                 jnz             .loop
 
-                pop             rcx
                 pop             rsi
-                pop             rdi
 
                 mov             rdi, r10
                 ret
