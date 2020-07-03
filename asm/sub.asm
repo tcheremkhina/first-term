@@ -328,23 +328,20 @@ comp_long_long:
 .loop:
                 mov r12, [rdi]
                 mov r13, [rsi]
+                cmp r13, r12
+                ja  .swap
                 cmp r12, r13
-                js  .swap
+                ja  .final
                 dec rcx
                 jz  .final
                 sub rdi, 8
                 sub rsi, 8
-                cmp r12, r13
-                je  .loop
-                jmp .final
+                jmp  .loop
 
 .swap:
                 pop rcx
-                pop rsi
                 pop rdi
-                mov r15, rdi
-                mov rdi, rsi
-                mov rsi, r15
+                pop rsi
                 ret
 
 .final:
