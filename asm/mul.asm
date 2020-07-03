@@ -1,16 +1,18 @@
                 section         .text
 
                 global          _start
+
+                %define         SZ 128
 _start:
 
-                sub             rsp, 3 * 256 * 8
-                lea             rdi, [rsp + 256 * 8]
-                mov             rcx, 128
+                sub             rsp, 4 * SZ * 8
+                lea             rdi, [rsp + SZ * 8]
+                mov             rcx, SZ
                 call            read_long
                 mov             rdi, rsp
                 call            read_long
-                lea             rsi, [rsp + 256 * 8]
-                lea             r10, [rsp + 2 * 256 * 8]
+                lea             rsi, [rsp + SZ * 8]
+                lea             r10, [rsp + 2 * SZ * 8]
                 call            mul_long_long
                 mov             rdi, r10
                 call            write_long
@@ -312,26 +314,28 @@ invalid_char_msg_size: equ             $ - invalid_char_msg
 
 
 ; copies long to long
-;   r14 -- address of num1 (long number)
+;   r11 -- address of num1 (long number)
 ;   rdi -- address of num2 (long number)
 ;   rcx -- length of numbers in qwords
 ; result:
-;   [r14] = [rdi]
+;   [r11] := [rdi]
 copy_long_long:
-                push            r14
+                push            r11
                 push            rdi
                 push            rcx
+                push            rax
 .loop:
                 mov             rax, [rdi]
                 lea             rdi, [rdi + 8]
-                mov             [r14], rax
-                lea             r14, [r14 + 8]
+                mov             [r11], rax
+                lea             r11, [r11 + 8]
                 dec             rcx
                 jnz             .loop
 
+                pop             rax
                 pop             rcx
                 pop             rdi
-                pop             r14
+                pop             r11
                 ret
 
 ; multiplies two long numbers
@@ -340,51 +344,67 @@ copy_long_long:
 ;   rcx -- length of numbers in qwords
 ; result:
 ;   product is written to r10
+;   rcx := 2 * rcx
 mul_long_long:
+                push            rbx
                 push            rsi
                 push            r11
+                push            r14
+                push            r15
 
-                mov             rcx, 256
-
-                sub             rsp, 2 * 256 * 8
-                mov             r11, rsp
+                lea             rsp, [rsp - (SZ + 1) * 8]
+                lea             r11, [rsp]
 
                 push            rdi
                 mov             rdi, r10
+                push            rcx
+                add             rcx, rcx
                 call            set_zero
+                pop             rcx
                 pop             rdi
 
-                mov             r15, 128
-                mov             r14, r11
+                mov             r15, rcx
+                mov             r14, r10
 
 .loop:
                 push            rdi
                 mov             rdi, r11
+                inc             rcx
                 call            set_zero
+                dec             rcx
                 pop             rdi
 
                 call            copy_long_long
+
                 mov             rbx, [rsi]
-                ;
                 push            rdi
                 mov             rdi, r11
+                inc             rcx
                 call            mul_long_short
-                pop             rdi
-                ;
+                dec             rcx
+                ;pop             rdi
+
                 push            rsi
-                push            rdi
+                ;push            rdi
                 mov             rsi, r11
-                mov             rdi, r10
+                mov             rdi, r14
+                inc             rcx
                 call            add_long_long
-                pop             rdi
+                dec             rcx
                 pop             rsi
+                pop             rdi
+
                 lea             rsi, [rsi + 8]
                 lea             r14, [r14 + 8]
                 dec             r15
                 jnz             .loop
 
-                add             rsp, 2 * 256 * 8
+                lea             rsp, [rsp + (SZ + 1) * 8]
+
+                pop             r15
+                pop             r14
                 pop             r11
                 pop             rsi
-
+                pop             rbx
+                add             rcx, rcx
                 ret
