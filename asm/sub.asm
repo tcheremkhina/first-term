@@ -1,17 +1,19 @@
                 section         .text
 
                 global          _start
+
+                %define         SZ 128
 _start:
 
 
-                sub             rsp, 3 * 256 * 8
-                lea             rdi, [rsp + 256 * 8]
-                mov             rcx, 128
+                sub             rsp, 3 * SZ * 8
+                lea             rdi, [rsp + SZ * 8]
+                mov             rcx, SZ
                 call            read_long
                 mov             rdi, rsp
                 call            read_long
-                lea             rsi, [rsp + 256 * 8]
-                lea             r10, [rsp + 2 * 256 * 8]
+                lea             rsi, [rsp + SZ * 8]
+                lea             r10, [rsp + 2 * SZ * 8]
                 call            sub_long_long
                 call            write_long
 
