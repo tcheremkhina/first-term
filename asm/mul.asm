@@ -3,7 +3,7 @@
                 global          _start
 _start:
 
-                sub             rsp, 6 * 256 * 8
+                sub             rsp, 3 * 256 * 8
                 lea             rdi, [rsp + 256 * 8]
                 mov             rcx, 128
                 call            read_long
@@ -11,8 +11,8 @@ _start:
                 call            read_long
                 lea             rsi, [rsp + 256 * 8]
                 lea             r10, [rsp + 2 * 256 * 8]
-                lea             r11, [rsp + 4 * 256 * 8]
                 call            mul_long_long
+                mov             rdi, r10
                 call            write_long
 
                 mov             al, 0x0a
@@ -339,11 +339,15 @@ copy_long_long:
 ;   rsi -- address of num2 (long number)
 ;   rcx -- length of numbers in qwords
 ; result:
-;   [rdi] = [rdi] * [rsi]
+;   product is written to r10
 mul_long_long:
                 push            rsi
+                push            r11
 
                 mov             rcx, 256
+
+                sub             rsp, 2 * 256 * 8
+                mov             r11, rsp
 
                 push            rdi
                 mov             rdi, r10
@@ -352,6 +356,7 @@ mul_long_long:
 
                 mov             r15, 128
                 mov             r14, r11
+
 .loop:
                 push            rdi
                 mov             rdi, r11
@@ -378,7 +383,8 @@ mul_long_long:
                 dec             r15
                 jnz             .loop
 
+                add             rsp, 2 * 256 * 8
+                pop             r11
                 pop             rsi
 
-                mov             rdi, r10
                 ret
