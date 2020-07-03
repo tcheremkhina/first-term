@@ -343,7 +343,6 @@ comp_long_long:
                 pop rdi
                 pop rsi
                 ret
-
 .final:
                 pop rcx
                 pop rsi
