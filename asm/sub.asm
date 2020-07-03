@@ -4,15 +4,14 @@
 _start:
 
 
-                sub             rsp, 6 * 256 * 8
+                sub             rsp, 3 * 256 * 8
                 lea             rdi, [rsp + 256 * 8]
-                mov             rcx, 256
+                mov             rcx, 128
                 call            read_long
                 mov             rdi, rsp
                 call            read_long
                 lea             rsi, [rsp + 256 * 8]
                 lea             r10, [rsp + 2 * 256 * 8]
-                lea             r11, [rsp + 4 * 256 * 8]
                 call            sub_long_long
                 call            write_long
 
