@@ -258,13 +258,7 @@ template <typename T>
 typename vector<T>::const_iterator vector<T>::end() const {
     return data_ + size_;
 }
-/*
-template <typename T>
-typename vector<T>::iterator vector<T>::insert(iterator pos, T const& x) {
-    T const* pos1 = pos;
-    return insert(pos1, x);
-}
-*/
+
 template <typename T>
 typename vector<T>::iterator vector<T>::insert(const_iterator pos, T const& x) {
     std::ptrdiff_t j = pos - begin();
@@ -280,14 +274,6 @@ typename vector<T>::iterator vector<T>::erase(const_iterator pos) {
     return erase(pos, pos + 1);
 }
 
-
-/*
-template <typename T>
-T* vector<T>::erase(T* pos) {
-    T const* pos1 = pos;
-    return erase(pos1);
-}
-*/
 template <typename T>
 typename vector<T>::iterator vector<T>::erase(const_iterator first, const_iterator last) {
     std::ptrdiff_t l = first - begin(), r = last - begin();
@@ -301,12 +287,4 @@ typename vector<T>::iterator vector<T>::erase(const_iterator first, const_iterat
     return data_ + size_ - 1;
 }
 
-/*
-template <typename T>
-T* vector<T>::erase(T* first, T* last) {
-    T const* f = first;
-    T const* l = last;
-    return erase(f, l);
-}
-*/
 #endif // VECTOR_H
