@@ -10,9 +10,9 @@ struct vector
     typedef T* iterator;
     typedef T const* const_iterator;
 
-    vector();                      // O(1) nothrow
+    vector();                               // O(1) nothrow
     vector(vector const& other);            // O(N) strong
-    vector& operator=(vector const& ); // O(N) strong
+    vector& operator=(vector const& );      // O(N) strong
 
     ~vector();                              // O(N) nothrow
 
@@ -47,47 +47,49 @@ struct vector
     const_iterator begin() const;           // O(1) nothrow
     const_iterator end() const;             // O(1) nothrow
 
-    iterator insert(iterator pos, T const&); // O(N) weak
+    // iterator insert(iterator pos, T const&);       // O(N) weak
     iterator insert(const_iterator pos, T const&); // O(N) weak
 
-    iterator erase(iterator pos);           // O(N) weak
+    // iterator erase(iterator pos);           // O(N) weak
     iterator erase(const_iterator pos);     // O(N) weak
 
-    iterator erase(iterator first, iterator last); // O(N) weak
+    // iterator erase(iterator first, iterator last);             // O(N) weak
     iterator erase(const_iterator first, const_iterator last); // O(N) weak
-
-private:
-    size_t index(T* ptr);
-    size_t index(T const* ptr);
 
 private:
     T* data_;
     size_t size_;
     size_t capacity_;
+    static void destroy_all(T* data, size_t n);
+    static void my_memcpy(T const* src, T* &dst, size_t len, T* prev_dst);
 };
 
+
 template <typename T>
-vector<T>::vector() {
-    size_ = 0;
-    capacity_ = 0;
-    data_ = nullptr;
+vector<T>::vector() : data_(NULL), size_(0), capacity_(0) {
 }
 
 template <typename T>
-void destroy_all(T* data, size_t n) {
+void vector<T>::destroy_all(T* data, size_t n) {
     for (size_t i = n; i > 0; i--) {
         data[i - 1].~T();
     }
 }
 
-template <typename TT>
-void my_memcpy(TT const* src, TT* dst, size_t len) {
-    size_t i = 0;
+template <typename T>
+void vector<T>::my_memcpy(T const* src, T* &dst, size_t len, T* prev_dst) {
     try {
-        for (; i != len; i++)
-            new(dst + i) TT(src[i]);
+        size_t i = 0;
+        try {
+            for (; i != len; i++)
+                new(dst + i) T(src[i]);
+        } catch (...) {
+            destroy_all(dst, i);
+            throw;
+        }
     } catch (...) {
-        destroy_all(dst, i);
+        operator delete (dst);
+        dst = prev_dst;
         throw;
     }
 }
@@ -98,22 +100,17 @@ vector<T>::vector(vector const& other) {
     if (other.size_ > 0) {
         new_data = static_cast<T*>(operator new(other.size_ * sizeof(T)));
     }
-    try {
-        my_memcpy(other.data_, new_data, other.size_);
-    } catch (...) {
-        operator delete(new_data);
-        throw;
-    }
+    my_memcpy(other.data_, new_data, other.size_, nullptr);
+    data_ = new_data;
     size_ = other.size_;
     capacity_ = other.size_;
-    data_ = new_data;
 }
 
 template <typename T>
 void vector<T>::swap(vector<T> &v) {
+    std::swap(data_, v.data_);
     std::swap(size_, v.size_);
     std::swap(capacity_, v.capacity_);
-    std::swap(data_, v.data_);
 }
 
 template <typename T>
@@ -125,7 +122,7 @@ vector<T>& vector<T>::operator=(vector const& other) {
 
 template <typename T>
 vector<T>::~vector() {
-    destroy_all(this->data_, this->size_);
+    destroy_all(data_, size_);
     operator delete(data_);
 }
 
@@ -188,11 +185,7 @@ void vector<T>::push_back(T const& x) {
         return;
     }
     T a = T(x);
-    if (!capacity_) {
-        reserve(1);
-    } else {
-        reserve(2 * capacity_);
-    }
+    reserve(capacity_ ? capacity_ * 2 : 1);
     push_back(a);
 }
 
@@ -218,13 +211,7 @@ void vector<T>::reserve(size_t n) {
     if (n > capacity_) {
         T *old_data = data_;
         data_ = static_cast<T*>(operator new(n * sizeof(T)));
-        try {
-            my_memcpy(old_data, data_, size_);
-        } catch (...) {
-            operator delete (data_);
-            data_ = old_data;
-            throw;
-        }
+        my_memcpy(old_data, data_, size_, old_data);
         capacity_ = n;
         destroy_all(old_data, size_);
         operator delete(old_data);
@@ -238,13 +225,7 @@ void vector<T>::shrink_to_fit() {
         data_ = NULL;
         if (size_ != 0) {
             data_ = static_cast<T*>(operator new(size_ * sizeof(T)));
-            try {
-                my_memcpy(old_data, data_, size_);
-            } catch (...) {
-                operator delete(data_);
-                data_ = old_data;
-                throw;
-            }
+            my_memcpy(old_data, data_, size_, old_data);
         }
         capacity_ = size_;
         destroy_all(old_data, size_);
@@ -259,94 +240,73 @@ void vector<T>::clear() {
 }
 
 template <typename T>
-T* vector<T>::begin() {
+typename vector<T>::iterator vector<T>::begin() {
     return data_;
 }
 
 template <typename T>
-T* vector<T>::end() {
+typename vector<T>::iterator vector<T>::end() {
     return data_ + size_;
 }
 
 template <typename T>
-T const* vector<T>::begin() const {
+typename vector<T>::const_iterator vector<T>::begin() const {
     return data_;
 }
 
 template <typename T>
-T const* vector<T>::end() const {
+typename vector<T>::const_iterator vector<T>::end() const {
     return data_ + size_;
 }
-
+/*
 template <typename T>
-size_t vector<T>::index(T* ptr) {
-    T const* pos = ptr;
-    return index(pos);
-}
-
-template <typename T>
-size_t vector<T>::index(T const* ptr) {
-    T* b = begin();
-    size_t j = 0;
-    while (b != ptr) {
-        b++;
-        j++;
-    }
-    return j;
-}
-
-template <typename T>
-T* vector<T>::insert(T* pos, T const& x) {
+typename vector<T>::iterator vector<T>::insert(iterator pos, T const& x) {
     T const* pos1 = pos;
     return insert(pos1, x);
 }
-
+*/
 template <typename T>
-T* vector<T>::insert(T const* pos, T const& x) {
-    size_t j = index(pos);
+typename vector<T>::iterator vector<T>::insert(const_iterator pos, T const& x) {
+    std::ptrdiff_t j = pos - begin();
     push_back(x);
-    size_t i = size_ - 1;
-    for (; i > j; i--) {
-        data_[i] = data_[i - 1];
+    for (size_t i = size_ - 1; i > j; i--) {
+        std::swap(data_[i], data_[i - 1]);
     }
-    data_[i] = x;
     return data_ + j;
 }
 
 template <typename T>
-T* vector<T>::erase(T const* pos) {
-    size_t j = index(pos);
-    for (size_t i = j; i + 1 < size_; i++) {
-        data_[i] = data_[i + 1];
-    }
-    pop_back();
-    return data_ + j;
+typename vector<T>::iterator vector<T>::erase(const_iterator pos) {
+    return erase(pos, pos + 1);
 }
 
+
+/*
 template <typename T>
 T* vector<T>::erase(T* pos) {
     T const* pos1 = pos;
     return erase(pos1);
 }
-
+*/
 template <typename T>
-T* vector<T>::erase(T const* first, T const* last) {
-    size_t l = index(first), r = index(last);
+typename vector<T>::iterator vector<T>::erase(const_iterator first, const_iterator last) {
+    std::ptrdiff_t l = first - begin(), r = last - begin();
     assert(r >= l);
     size_t len = r - l;
     for (size_t i = r; i < size_; i++) {
-        data_[i - len] = data_[i];
+        std::swap(data_[i - len], data_[i]);
     }
     destroy_all(data_ + size_ - len, len);
     size_ -= len;
     return data_ + size_ - 1;
 }
 
+/*
 template <typename T>
 T* vector<T>::erase(T* first, T* last) {
     T const* f = first;
     T const* l = last;
     return erase(f, l);
 }
-
+*/
 #endif // VECTOR_H
