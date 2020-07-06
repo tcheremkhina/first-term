@@ -47,13 +47,10 @@ struct vector
     const_iterator begin() const;           // O(1) nothrow
     const_iterator end() const;             // O(1) nothrow
 
-    // iterator insert(iterator pos, T const&);       // O(N) weak
     iterator insert(const_iterator pos, T const&); // O(N) weak
 
-    // iterator erase(iterator pos);           // O(N) weak
     iterator erase(const_iterator pos);     // O(N) weak
 
-    // iterator erase(iterator first, iterator last);             // O(N) weak
     iterator erase(const_iterator first, const_iterator last); // O(N) weak
 
 private:
@@ -61,12 +58,14 @@ private:
     size_t size_;
     size_t capacity_;
     static void destroy_all(T* data, size_t n);
-    static void my_memcpy(T const* src, T* &dst, size_t len, T* prev_dst);
+    static void my_memcpy(T const* src, T* dst, size_t len);
+    static T* mem_alloc_and_copy(T const* src, size_t alloc_len, size_t copy_len);
+
 };
 
 
 template <typename T>
-vector<T>::vector() : data_(NULL), size_(0), capacity_(0) {
+vector<T>::vector() : data_(nullptr), size_(0), capacity_(0) {
 }
 
 template <typename T>
@@ -77,30 +76,37 @@ void vector<T>::destroy_all(T* data, size_t n) {
 }
 
 template <typename T>
-void vector<T>::my_memcpy(T const* src, T* &dst, size_t len, T* prev_dst) {
+void vector<T>::my_memcpy(T const* src, T* dst, size_t len) {
+    size_t i = 0;
     try {
-        size_t i = 0;
-        try {
-            for (; i != len; i++)
-                new(dst + i) T(src[i]);
-        } catch (...) {
-            destroy_all(dst, i);
-            throw;
-        }
+        for (; i != len; i++)
+            new(dst + i) T(src[i]);
     } catch (...) {
-        operator delete (dst);
-        dst = prev_dst;
+        destroy_all(dst, i);
         throw;
     }
+}
+
+template <typename T>
+T* vector<T>::mem_alloc_and_copy(T const* src, size_t alloc_len, size_t copy_len) {
+    T* dst = static_cast<T*>(operator new (alloc_len * sizeof(T)));
+    try {
+        my_memcpy(src, dst, copy_len);
+    } catch (...) {
+        operator delete (dst);
+        throw;
+    }
+    return dst;
 }
 
 template <typename T>
 vector<T>::vector(vector const& other) {
     T *new_data = nullptr;
     if (other.size_ > 0) {
-        new_data = static_cast<T*>(operator new(other.size_ * sizeof(T)));
+        // new_data = static_cast<T*>(operator new(other.size_ * sizeof(T)));
+        new_data = mem_alloc_and_copy(other.data_, other.size_, other.size_);
     }
-    my_memcpy(other.data_, new_data, other.size_, nullptr);
+    // my_memcpy(other.data_, new_data, other.size_);
     data_ = new_data;
     size_ = other.size_;
     capacity_ = other.size_;
@@ -210,8 +216,8 @@ template <typename T>
 void vector<T>::reserve(size_t n) {
     if (n > capacity_) {
         T *old_data = data_;
-        data_ = static_cast<T*>(operator new(n * sizeof(T)));
-        my_memcpy(old_data, data_, size_, old_data);
+        data_ = mem_alloc_and_copy(old_data, n, size_); // static_cast<T*>(operator new(n * sizeof(T)));
+        // my_memcpy(old_data, data_, size_, old_data);
         capacity_ = n;
         destroy_all(old_data, size_);
         operator delete(old_data);
@@ -222,10 +228,10 @@ template <typename T>
 void vector<T>::shrink_to_fit() {
     if (size_ < capacity_) {
         T *old_data = data_;
-        data_ = NULL;
+        data_ = nullptr;
         if (size_ != 0) {
-            data_ = static_cast<T*>(operator new(size_ * sizeof(T)));
-            my_memcpy(old_data, data_, size_, old_data);
+            data_ = mem_alloc_and_copy(old_data, size_, size_); // static_cast<T*>(operator new(size_ * sizeof(T)));
+            // my_memcpy(old_data, data_, size_, old_data);
         }
         capacity_ = size_;
         destroy_all(old_data, size_);
