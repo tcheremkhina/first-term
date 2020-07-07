@@ -260,7 +260,7 @@ big_integer& big_integer::operator/=(big_integer const& a) {
 big_integer& big_integer::operator%=(big_integer const& a) {
     big_integer b = *this;
     *this = div_mod(abs(b), abs(a), true);
-    sign_ = (b.sign_ && !a.sign_);
+    sign_ = b.sign_;
     return *this;
 }
 
@@ -272,7 +272,7 @@ big_integer& big_integer::operator<<=(int shift) {
     if (*this == NUM[0]) {
         return *this;
     }
-    int n = shift / (int)CEIL_SIZE;
+    int n = shift / CEIL_SIZE;
     for (int i = 0; i < n; i++) {
         data_.push_back(0);
     }
@@ -282,10 +282,10 @@ big_integer& big_integer::operator<<=(int shift) {
     for (int i = 0; i < n; i++) {
         data_[i] = 0;
     }
-    n = shift % (int)CEIL_SIZE;
+    n = shift % CEIL_SIZE;
     if (n) {
-        if (UINT_MAX / ((uint)1 << (uint)n) < data_.back()) {
-            data_.push_back(0); // inc_size(0);
+        if ((UINT_MAX >> n) < data_.back()) {
+            data_.push_back(0);
         }
         uint x = 0;
         for (size_t i = 0; i < size(); i++) {
@@ -317,77 +317,55 @@ big_integer& big_integer::operator>>=(int shift) {
             data_[i] = (data_[i] >> n) + x;
             x = y;
         }
-        if (sign_) {
-            *this -= 1;
-        }
+    }
+    if (sign_ ) {
+        *this -= NUM[1];
     }
     del_zero();
     return *this;
 }
 
-big_integer translate_numbers(big_integer const& a, size_t len) {
-    big_integer x = abs(a);
-    if (a.sign()) {
-        x = (NUM[2] << (int)(len * a.CEIL_SIZE)) - x;
+void translate_number(big_integer &a, size_t len) {
+    while (a.size() < len) {
+        a.data_.push_back(0);
     }
-    return x;
+    if (a.sign()) {
+        for (auto &i : a.data_) {
+            i = ~i;
+        }
+        a--;
+    }
+}
+
+big_integer bit_operation(big_integer const& x, big_integer const& y, std::function<uint(uint, uint)> f) {
+    size_t len = std::max(x.size(), y.size());
+    big_integer a(x), b(y);
+    translate_number(a, len);
+    translate_number(b, len);
+    big_integer ans;
+    ans.data_.resize(len);
+    for (size_t i = 0; i < len; i++) {
+        ans.data_[i] = f(a.data_[i], b.data_[i]);
+    }
+    ans.del_zero();
+    ans.sign_ = f(x.sign_, y.sign_);
+    translate_number(ans, len);
+    ans.del_zero();
+    return ans;
 }
 
 big_integer& big_integer::operator&=(big_integer const& a) {
-    if (sign_ != a.sign_) {
-        size_t len = std::max(a.size(), size());
-        big_integer x = translate_numbers(*this, len);
-        big_integer y = translate_numbers(a, len);
-        x &= y;
-        x -= (big_integer(x.data(len)) << (int)(len * CEIL_SIZE + 1));
-        *this = x;
-        del_zero();
-        return *this;
-    }
-    for (size_t i = 0; i < size(); i++) {
-        data_[i] &= a.data(i);
-    }
-    del_zero();
+    *this = bit_operation(*this, a, [] (uint a, uint b) {return a & b;});
     return *this;
 }
 
 big_integer& big_integer::operator|=(big_integer const& a) {
-    if (sign_ != a.sign_) {
-        size_t len = std::max(a.size(), size());
-        big_integer x = translate_numbers(*this, len);
-        big_integer y = translate_numbers(a, len);
-        x |= y;
-        x -= (big_integer(x.data(len)) << (int)(len * CEIL_SIZE + 1));
-        *this = x;
-        del_zero();
-        return *this;
-    }
-    for (size_t i = 0; i < size(); i++) {
-        data_[i] |= a.data(i);
-    }
-    for (size_t i = size(); i < a.size(); i++) {
-        data_.push_back(a.data(i));
-    }
+    *this = bit_operation(*this, a, [] (uint a, uint b) {return a | b;});
     return *this;
 }
 
 big_integer& big_integer::operator^=(big_integer const& a) {
-    if (sign_ != a.sign_) {
-        size_t len = std::max(a.size(), size());
-        big_integer x = translate_numbers(*this, len);
-        big_integer y = translate_numbers(a, len);
-        x ^= y;
-        x -= (big_integer(x.data(len)) << (int)(len * CEIL_SIZE + 1));
-        *this = x;
-        del_zero();
-        return *this;
-    }
-    for (size_t i = 0; i < size(); i++) {
-        data_[i] ^= a.data(i);
-    }
-    for (size_t i = size(); i < a.size(); i++) {
-        data_.push_back(a.data(i));
-    }
+    *this = bit_operation(*this, a, [] (uint a, uint b) {return a ^ b;});
     return *this;
 }
 
@@ -433,7 +411,7 @@ big_integer operator^(big_integer a, big_integer const& b) {
 
 big_integer big_integer::operator-() const {
     big_integer b = *this;
-    b.sign_ ^= (uint)1;
+    b.sign_ ^= true;
     return b;
 }
 
@@ -442,14 +420,14 @@ big_integer big_integer::operator+() const {
 }
 
 big_integer big_integer::operator~() const {
-    return (-*this - 1);
+    return (-*this - NUM[1]);
 }
 
 std::string to_string (big_integer const& a) {
     if (a < NUM[0]) {
         return "-" + to_string(-a);
     }
-    std::string str; // = "";
+    std::string str;
     big_integer x = a;
     while (x > NUM[0]) {
         big_integer r = (x % NUM[10]);

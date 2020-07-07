@@ -2,6 +2,7 @@
 #define BIG_INTEGER_H
 
 #include <iostream>
+#include <functional>
 #include <vector>
 
 struct big_integer
@@ -54,6 +55,9 @@ private:
     void del_zero();
 
 
+    friend void translate_number(big_integer &a, size_t len);
+    friend big_integer bit_operation(big_integer const& x, big_integer const& y,
+            std::function<uint (uint, uint)> f);
     friend bool operator==(big_integer const& a, big_integer const& b);
     friend bool operator<(big_integer const& a, big_integer const& b);
     friend bool operator<=(big_integer const& a, big_integer const& b);
