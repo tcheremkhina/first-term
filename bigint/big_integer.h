@@ -66,7 +66,7 @@ private:
     friend bool operator!=(big_integer const& a, big_integer const& b);
 
     friend std::string to_string(big_integer const& a);
-    friend big_integer div_mod(big_integer a, big_integer b, bool mod);
+    friend big_integer div_mod(big_integer &a, big_integer &b, bool mod);
 };
 
 big_integer operator+(big_integer a, big_integer const& b);

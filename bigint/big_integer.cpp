@@ -14,20 +14,13 @@ void my_memcpy(std::vector<uint> &dst, std::vector<uint> const& src, size_t len)
     }
 }
 
-big_integer::big_integer() :
-        data_(1, 0), sign_(false){}
+big_integer::big_integer() : data_(1, 0), sign_(false) {}
 
 big_integer::~big_integer() = default;
 
-big_integer::big_integer(uint const& a) {
-    data_ = storage_t(1, a);
-    sign_ = false;
-}
+big_integer::big_integer(uint const& a) : data_(1, a), sign_(false) {}
 
-big_integer::big_integer(int const& a) {
-    data_ = storage_t(1, std::abs((int64_t)a));
-    sign_ = (a < 0);
-}
+big_integer::big_integer(int const& a) : data_(1, std::abs(static_cast<int64_t>(a))), sign_(a < 0) {}
 
 const big_integer NUM[11] = {big_integer(0), big_integer(1), big_integer(2),
                              big_integer(3), big_integer(4), big_integer(5),
@@ -35,10 +28,8 @@ const big_integer NUM[11] = {big_integer(0), big_integer(1), big_integer(2),
                              big_integer(9), big_integer(10)};
 
 big_integer& big_integer::operator=(big_integer const& other) {
-    if (this != &other) {
-        sign_ = other.sign_;
-        data_ = other.data_;
-    }
+    sign_ = other.sign_;
+    data_ = other.data_;
     return *this;
 }
 
@@ -64,18 +55,18 @@ big_integer::big_integer(std::string const& str) {
     sign_ = (str[0] == '-');
 }
 
-size_t big_integer::size() const {
+inline size_t big_integer::size() const {
     return data_.size();
 }
 
-uint big_integer::data(size_t i) const {
+inline uint big_integer::data(size_t i) const {
     if (i >= size()) {
         return 0;
     }
     return data_[i];
 }
 
-bool big_integer::sign() const {
+inline bool big_integer::sign() const {
     return sign_;
 }
 
@@ -91,23 +82,19 @@ big_integer& big_integer::operator-=(big_integer const& a) {
         *this += (-a);
         return *this;
     }
-    if ((*this != a) && ((*this) < a) != sign_) {
-        big_integer h = a;
-        h -= *this;
-        *this = (-h);
+
+    if ((*this != a) && (*this < a) != sign_) {
+        *this = (a - *this);
+        sign_ ^= true;
         return *this;
     }
     uint x = 0;
     for (size_t i = 0; i < size(); i++) {
         uint y = 0;
-        if (data_[i] < a.data(i)) {
+        if (data_[i] < a.data(i) + x) {
             y = 1;
         }
-        data_[i] -= a.data(i);
-        if (data_[i] < x) {
-            y = 1;
-        }
-        data_[i] -= x;
+        data_[i] -= (a.data(i) + x);
         x = y;
     }
     assert(x == 0);
@@ -120,23 +107,17 @@ big_integer& big_integer::operator+=(big_integer const& a) {
         *this -= (-a);
         return *this;
     }
-    if ((*this).size() < a.size()) {
-        big_integer h = a;
-        h += *this;
-        *this = h;
+    if (size() < a.size()) {
+        *this = (a + *this);
         return *this;
     }
     uint x = 0;
     for (size_t i = 0; i < size(); i++) {
         uint y = 0;
-        if (UINT_MAX - data_[i] < a.data(i)) {
+        if (UINT_MAX - data_[i] < a.data(i) + x) {
             y = 1;
         }
-        data_[i] += a.data(i);
-        if (UINT_MAX - data_[i] < x) {
-            y = 1;
-        }
-        data_[i] += x;
+        data_[i] += (a.data(i) + x);
         x = y;
     }
     if (x) {
@@ -146,12 +127,12 @@ big_integer& big_integer::operator+=(big_integer const& a) {
 }
 
 big_integer& big_integer::operator++() {
-    *this += big_integer(1);
+    *this += NUM[1];
     return *this;
 }
 
 big_integer& big_integer::operator--() {
-    *this -= big_integer(1);
+    *this -= NUM[1];
     return *this;
 }
 
@@ -190,9 +171,6 @@ big_integer& big_integer::operator*=(big_integer const& a) {
         *this = a;
         return *this;
     }
-    if (size() == 0) {
-        return *this;
-    }
     big_integer b(*this);
     big_integer c(b.mult_short(a.data(0)));
     for (size_t i = 1; i < a.size(); i++) {
@@ -204,44 +182,43 @@ big_integer& big_integer::operator*=(big_integer const& a) {
     return *this;
 }
 
-big_integer div_mod(big_integer a, big_integer b, bool mod) {
-    if (b.size() == 0) {
-        assert(0);
-    }
-    if (a.size() == 0) {
+big_integer div_mod(big_integer &a, big_integer &b, bool mod) {
+    assert(b != NUM[0]);
+    if (a == NUM[0]) {
         return a;
     }
     if (a < b) {
-        if (!mod) {
-            return NUM[0];
-        }
-        return a;
+        return mod ? a : NUM[0];
     }
     int shift = 0;
-    while (b.data_.back() < UINT_MAX / 2 + 1) {
-        a <<= 1;
-        b <<= 1;
-        shift++;
+    if (b.data_.back() < UINT_MAX / 2 + 1) {
+        uint bb = b.data_.back();
+        while (bb < UINT_MAX / 2 + 1) {
+            bb <<= 1;
+            shift++;
+        }
+        a <<= shift;
+        b <<= shift;
     }
     size_t m = a.size() - b.size();
     big_integer q(0);
-    if (a >= (b << (int32_t)(m * a.CEIL_SIZE))) {
-        q = (NUM[1] << (int32_t)(m * a.CEIL_SIZE));
-        a -= (b << (int32_t)(m * a.CEIL_SIZE));
+    if (a >= (b << static_cast<int32_t>(m * a.CEIL_SIZE))) {
+        q = (NUM[1] << static_cast<int32_t>(m * a.CEIL_SIZE));
+        a -= (b << static_cast<int32_t>(m * a.CEIL_SIZE));
     }
     while (q.size() < m) {
         q.data_.push_back(0);
     }
-    for (int j = (int)m - 1; j >= 0; j--) {
-        q.data_[j] += std::min((uint64_t)UINT_MAX, ((uint64_t)a.data(b.size() + j) * BASE +
-                                                    (uint64_t)a.data(b.size() + j - 1)) / (uint64_t)b.data(b.size() - 1));
-        assert((int)q.size() > j);
-        // assert(q.data_[j] <= INT_MAX);
-        a -= ((big_integer(q.data_[j]) * b) << (int32_t)(j * a.CEIL_SIZE));
+    for (int j = static_cast<int>(m) - 1; j >= 0; j--) {
+        q.data_[j] += std::min(static_cast<uint64_t>(UINT_MAX),
+                (static_cast<uint64_t>(a.data(b.size() + j)) * BASE + static_cast<uint64_t>(a.data(b.size() + j - 1)))
+                                                    / static_cast<uint64_t>(b.data(b.size() - 1)));
+        assert(q.size() > j);
+        a -= ((big_integer(q.data_[j]) * b) << static_cast<int32_t>(j * a.CEIL_SIZE));
         while (a < NUM[0]) {
             q.data_[j]--;
             assert(q.data_[j] >= 0);
-            a += (b << (int32_t)(j * a.CEIL_SIZE));
+            a += (b << static_cast<int32_t>(j * a.CEIL_SIZE));
         }
     }
     if (mod) {
@@ -252,14 +229,16 @@ big_integer div_mod(big_integer a, big_integer b, bool mod) {
 
 big_integer& big_integer::operator/=(big_integer const& a) {
     big_integer b = *this;
-    *this = div_mod(abs(b), abs(a), false);
+    big_integer x = abs(b), y = abs(a);
+    *this = div_mod(x, y, false);
     sign_ = (b.sign_ != a.sign_);
     return *this;
 }
 
 big_integer& big_integer::operator%=(big_integer const& a) {
     big_integer b = *this;
-    *this = div_mod(abs(b), abs(a), true);
+    big_integer x = abs(b), y = abs(a);
+    *this = div_mod(x, y, true);
     sign_ = b.sign_;
     return *this;
 }
