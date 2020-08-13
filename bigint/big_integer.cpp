@@ -5,15 +5,10 @@
 #include <cassert>
 #include <climits>
 #include <algorithm>
-#include <stdexcept>
 #include <functional>
 #include <string>
-#include <sstream>
-#include <iomanip>
 
 uint64_t const BASE = (uint64_t)UINT_MAX + (uint64_t)1;
-
-// typedef unsigned long long int uint128_t __attribute__ ((mode (TI)));
 
 typedef unsigned int uint32_t;
 
@@ -178,11 +173,6 @@ big_integer big_integer::mult_short(uint32_t x) {
 }
 
 big_integer& big_integer::operator*=(big_integer const& a) {
-    if (a.size() == 0) {
-        assert(0);
-        *this = a;
-        return *this;
-    }
     big_integer b(*this);
     big_integer c(b.mult_short(a.data(0)));
     for (size_t i = 1; i < a.size(); i++) {
@@ -266,17 +256,12 @@ big_integer div_mod(big_integer &a, big_integer &b, bool mod) {
         uint32_t qt = trial(r, d, k, m);
         big_integer dq = d * big_integer(qt);
         if (r  < (dq << static_cast<size_t>(k * r.CEIL_SIZE))) {
-            // qt--;
+            qt--;
             assert(dq >= d);
             dq -= d;
         }
         q.data_.push_back(qt);
-        big_integer tmp = (dq << static_cast<size_t>(k * dq.CEIL_SIZE));
-        if (r < tmp) {
-           std::cout << "qt = " << qt << std::endl;
-           print_data(dq, "dq");
-           std::cout << "r.size() = " << r.size() << ", tmp.size() = " << tmp.size() << std::endl;
-        }
+        big_integer tmp(dq << static_cast<size_t>(k * dq.CEIL_SIZE));
         assert(r >= tmp);
         r -= tmp;
     }
@@ -469,7 +454,6 @@ std::string to_string (big_integer x) {
         return "-" + to_string(-x);
     }
     std::string str;
-    // big_integer x = a;
     while (x > NUM[0]) {
         big_integer r = x;
         r.div_mod_short(10, true);
