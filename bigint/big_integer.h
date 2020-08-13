@@ -8,6 +8,7 @@
 struct big_integer
 {
     using uint = uint32_t;
+    using storage_t = std::vector<uint>;
     big_integer();
     big_integer(big_integer const& other);
     big_integer(int const& val);
@@ -44,7 +45,7 @@ struct big_integer
     size_t const CEIL_SIZE = 8 * sizeof(uint);
 
 private:
-    std::vector<uint> data_;
+    storage_t data_;
     bool sign_; // 0 if +, 1 if -
     void del_zero();
 
