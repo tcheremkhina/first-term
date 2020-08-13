@@ -5,8 +5,6 @@
 #include <cassert>
 #include <climits>
 #include <algorithm>
-#include <functional>
-#include <string>
 
 uint64_t const BASE = (uint64_t)UINT_MAX + (uint64_t)1;
 
