@@ -6,9 +6,7 @@
 #include <climits>
 #include <algorithm>
 
-uint64_t const BASE = (uint64_t)UINT_MAX + (uint64_t)1;
-
-typedef unsigned int uint32_t;
+uint64_t const BASE = static_cast<uint64_t>(UINT_MAX) + static_cast<uint64_t>(1);
 
 big_integer::big_integer() : data_(1, 0), sign_(false) {}
 
