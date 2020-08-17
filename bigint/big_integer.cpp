@@ -49,22 +49,22 @@ big_integer::big_integer(std::string const& str) {
     sign_ = (str[0] == '-');
 }
 
-inline size_t big_integer::size() const {
+size_t big_integer::size() const {
     return data_.size();
 }
 
-inline uint32_t big_integer::data(size_t i) const {
+uint32_t big_integer::data(size_t i) const {
     if (i >= size()) {
         return 0;
     }
     return data_[i];
 }
 
-inline bool big_integer::sign() const {
+bool big_integer::sign() const {
     return sign_;
 }
 
-inline big_integer abs(big_integer const& a) {
+big_integer abs(big_integer const& a) {
     if (a.sign()) {
         return -a;
     }
