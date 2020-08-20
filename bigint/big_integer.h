@@ -12,7 +12,7 @@ struct big_integer
     big_integer();
     big_integer(big_integer const& other);
     big_integer(int const& val);
-    explicit big_integer(uint const& val);
+    big_integer(uint const& val);
     ~big_integer();
     explicit big_integer(std::string const& str);
     big_integer& operator=(big_integer const& other);

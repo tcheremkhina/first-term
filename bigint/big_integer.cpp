@@ -239,7 +239,7 @@ big_integer div_mod(big_integer &a, big_integer &b, bool mod) {
     }
     assert(b.size());
     uint32_t shift = BASE / static_cast<uint64_t>(b.data_.back() + 1); // 0;
-    big_integer r(a * big_integer(shift)), d(b * big_integer(shift));
+    big_integer r(a * shift), d(b * shift);
     size_t n = a.size(), m = b.size();
     assert(2 <= m && m <= n);
     big_integer q(0);
@@ -250,7 +250,7 @@ big_integer div_mod(big_integer &a, big_integer &b, bool mod) {
             continue;
         }
         uint32_t qt = trial(r, d, k, m);
-        big_integer dq = d * big_integer(qt);
+        big_integer dq = d * qt;
         if (r  < (dq << static_cast<size_t>(k * r.CEIL_SIZE))) {
             qt--;
             assert(dq >= d);
