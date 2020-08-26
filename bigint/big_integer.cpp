@@ -22,8 +22,8 @@ const big_integer NUM[11] = {big_integer(0), big_integer(1), big_integer(2),
                              big_integer(9), big_integer(10)};
 
 big_integer& big_integer::operator=(big_integer const& other) {
-    sign_ = other.sign_;
     data_ = other.data_;
+    sign_ = other.sign_;
     return *this;
 }
 
