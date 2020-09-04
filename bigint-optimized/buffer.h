@@ -50,8 +50,10 @@ struct buffer {
     }
 
     void resize(size_t new_size, uint32_t const& x = 0) {
-        this->~buffer();
+        buffer tmp = (*this);
+        // this->~buffer();
         *this = buffer(new_size, x);
+        tmp.~buffer();
     }
 
     explicit buffer(size_t len) {
