@@ -12,14 +12,14 @@ big_integer::big_integer() : data_(1, 0), sign_(false) {}
 
 big_integer::~big_integer() = default;
 
-big_integer::big_integer(uint32_t const& a) : data_(1, a), sign_(false) {}
+big_integer::big_integer(uint32_t a) : data_(1, a), sign_(false) {}
 
 big_integer::big_integer(int const& a) : data_(1, std::abs(static_cast<int64_t>(a))), sign_(a < 0) {}
 
 const big_integer NUM[11] = {big_integer(0), big_integer(1), big_integer(2),
                              big_integer(3), big_integer(4), big_integer(5),
                              big_integer(6), big_integer(7), big_integer(8),
-                             big_integer(9), big_integer(10)};
+                             big_integer(9)};
 
 big_integer& big_integer::operator=(big_integer const& other) {
     data_ = other.data_;
@@ -38,11 +38,15 @@ void big_integer::del_zero() {
 big_integer::big_integer(std::string const& str) {
     data_.resize(1, 0);
     sign_ = false;
-    for (char i : str) {
-        if (i > '9' || i < '0') {
-            continue;
+    for (size_t i = 0; i < str.length(); i++) {
+        if (str[i] > '9' || str[i] < '0') {
+            if (i == 0 && (str[i] == '-' || str[i] == '+')) {
+                continue;
+            } else {
+                throw std::invalid_argument("Invalid string");
+            }
         }
-        int x = i - '0';
+        int x = str[i] - '0';
         *this = mult_short(10);
         *this += NUM[x];
     }
@@ -100,7 +104,7 @@ big_integer& big_integer::operator-=(big_integer const& a) {
         x = y;
     }
     assert(x == 0);
-    (*this).del_zero();
+    del_zero();
     return *this;
 }
 
@@ -150,7 +154,7 @@ big_integer big_integer::operator--(int) {
     return tmp;
 }
 
-big_integer big_integer::mult_short(uint32_t x) {
+big_integer big_integer::mult_short(uint32_t x) const {
     big_integer b = *this;
     uint64_t t = 0;
     for (size_t i = 0; i < size(); i++) {
@@ -472,10 +476,6 @@ bool operator==(big_integer const& a, big_integer const& b) {
             (a.data_ == b.data_ && a.data_ == NUM[0].data_));
 }
 
-bool operator>(big_integer const& a, big_integer const& b) {
-    return !(a <= b);
-}
-
 bool operator<(big_integer const& a, big_integer const& b) {
     if (a == b) {
         return false;
@@ -494,12 +494,16 @@ bool operator<(big_integer const& a, big_integer const& b) {
     return false;
 }
 
-bool operator!=(big_integer const& a, big_integer const& b) {
-    return !(a == b);
-}
-
 bool operator<=(big_integer const& a, big_integer const& b) {
     return (a < b || a == b);
+}
+
+bool operator>(big_integer const& a, big_integer const& b) {
+    return !(a <= b);
+}
+
+bool operator!=(big_integer const& a, big_integer const& b) {
+    return !(a == b);
 }
 
 bool operator>=(big_integer const& a, big_integer const& b) {

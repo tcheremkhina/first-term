@@ -12,7 +12,7 @@ struct big_integer
     big_integer();
     big_integer(big_integer const& other);
     big_integer(int const& val);
-    big_integer(uint const& val);
+    big_integer(uint val);
     ~big_integer();
     explicit big_integer(std::string const& str);
     big_integer& operator=(big_integer const& other);
@@ -40,7 +40,7 @@ struct big_integer
     uint data(size_t i) const;
     bool sign() const;
 
-    big_integer mult_short(uint x);
+    big_integer mult_short(uint x) const;
     void div_mod_short(uint x, bool mod);
     size_t const CEIL_SIZE = 8 * sizeof(uint);
 
