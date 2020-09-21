@@ -11,7 +11,7 @@ my_vector::my_vector(std::vector<uint32_t> const& vec) : ref_counter(1), vec(vec
 
 my_vector::my_vector(my_vector const& other) : ref_counter(1), vec(other.vec) {}
 
-my_vector::my_vector(uint32_t* src, size_t len) : ref_counter(1) {
+my_vector::my_vector(uint32_t* const& src, size_t len) : ref_counter(1) {
     vec.reserve(len);
     for (size_t i = 0; i < len; i++) {
         vec.push_back(src[i]);
