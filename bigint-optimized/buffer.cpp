@@ -10,22 +10,19 @@ buffer::buffer() {
 }
 
 buffer::buffer(buffer const& other) : size_(other.size_), small(other.small) {
-    if (!small) {
+    if (small) {
+        std::copy(other.static_vec, other.static_vec + size_, static_vec);
+    } else {
         dynamic_vec = other.dynamic_vec;
         dynamic_vec->inc_ref();
-    } else {
-        std::copy(other.static_vec, other.static_vec + size_, static_vec);
     }
 }
 
 buffer::buffer(size_t len, uint32_t x) : size_(len), small(len <= MAX_STATIC) {
-    if (!small) {
-        dynamic_vec = new my_vector(len, x);
-    } else {
+    if (small) {
         std::fill(static_vec, static_vec + len, x);
-        /*if (len < MAX_STATIC) {
-            std::fill(static_vec + len, static_vec + MAX_STATIC, 0);
-        }*/
+    } else {
+        dynamic_vec = new my_vector(len, x);
     }
 }
 
@@ -36,30 +33,30 @@ buffer& buffer::operator= (buffer const& other) {
     this->~buffer();
     size_ = other.size_;
     small = other.small;
-    if (!small) {
+    if (small) {
+        std::copy(other.static_vec, other.static_vec + size_, static_vec);
+    } else {
         dynamic_vec = other.dynamic_vec;
         dynamic_vec->inc_ref();
-    } else {
-        std::copy(other.static_vec, other.static_vec + size_, static_vec);
     }
     return *this;
 }
 
 void buffer::resize(size_t new_size, uint32_t x) {
-    if (!small) {
+    if (small) {
+        *this = buffer(new_size, x);
+    } else {
         buffer tmp = (*this);
         *this = buffer(new_size, x);
         tmp.~buffer();
-    } else {
-        *this = buffer(new_size, x);
     }
 }
 
 buffer::buffer(size_t len) : size_(len), small(len <= MAX_STATIC) {
-    if (!small) {
-        dynamic_vec = new my_vector(len);
-    } else {
+    if (small) {
         std::fill(static_vec, static_vec + size_, 0);
+    } else {
+        dynamic_vec = new my_vector(len);
     }
 }
 
@@ -82,28 +79,28 @@ bool buffer::operator== (buffer const& other) const {
 }
 
 void buffer::reverse() {
-    if (!small) {
+    if (small) {
+        std::reverse(static_vec, static_vec + size_);
+    } else {
         unshare();
         dynamic_vec->reverse();
-    } else {
-        std::reverse(static_vec, static_vec + size_);
     }
 }
 
 uint32_t& buffer::operator[] (size_t i) {
-    if (!small) {
+    if (small) {
+        return static_vec[i];
+    } else {
         unshare();
         return (*dynamic_vec)[i];
-    } else {
-        return static_vec[i];
     }
 }
 
 uint32_t const& buffer::operator[] (size_t i) const {
-    if (!small) {
-        return (*dynamic_vec)[i];
-    } else {
+    if (small) {
         return static_vec[i];
+    } else {
+        return (*dynamic_vec)[i];
     }
 }
 
@@ -123,10 +120,10 @@ void buffer::push_back(uint32_t const& x) {
 
 uint32_t buffer::back() const {
     assert(size_ > 0);
-    if (!small) {
-        return (*dynamic_vec)[size_ - 1];
-    } else {
+    if (small) {
         return static_vec[size_ - 1];
+    } else {
+        return (*dynamic_vec)[size_ - 1];
     }
 }
 
