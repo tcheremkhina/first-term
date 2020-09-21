@@ -15,7 +15,7 @@ struct my_vector {
     uint32_t& operator[] (size_t i);
     uint32_t const& operator[] (size_t i) const;
     my_vector* get_unique();
-    void push_back(uint32_t const& x);
+    void push_back(uint32_t x);
     void pop_back();
     void delete_vector();
     void inc_ref();

@@ -46,7 +46,7 @@ my_vector* my_vector::get_unique() {
     return new my_vector(vec);
 }
 
-void my_vector::push_back(uint32_t const& x) {
+void my_vector::push_back(uint32_t x) {
     vec.push_back(x);
 }
 

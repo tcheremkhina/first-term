@@ -238,7 +238,7 @@ big_integer div_mod(big_integer &a, big_integer &b, bool mod) {
         return ans;
     }
     assert(b.size());
-    uint32_t shift = BASE / static_cast<uint64_t>(b.data_.back() + 1); // 0;
+    uint32_t shift = BASE / static_cast<uint64_t>(b.data_.back() + 1);
     big_integer r(a * shift), d(b * shift);
     size_t n = a.size(), m = b.size();
     assert(2 <= m && m <= n);
