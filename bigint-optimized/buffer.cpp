@@ -103,7 +103,12 @@ void buffer::push_back(uint32_t const& x) {
         static_vec[size_] = x;
     } else {
         my_vector* tmp = new my_vector(static_vec, static_vec + size_);
-        tmp->push_back(x);
+        try {
+            tmp->push_back(x);
+        } catch (...) {
+            delete tmp;
+            throw;
+        }
         dynamic_vec = tmp;
         small = false;
     }

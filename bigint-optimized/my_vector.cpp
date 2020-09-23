@@ -11,13 +11,9 @@ my_vector::my_vector(std::vector<uint32_t> const& vec) : ref_counter(1), vec(vec
 
 my_vector::my_vector(my_vector const& other) : ref_counter(1), vec(other.vec) {}
 
-my_vector::my_vector(uint32_t* first, uint32_t* last) : ref_counter(1) {
-    vec = std::vector<uint32_t> (first, last);
-}
+my_vector::my_vector(uint32_t* first, uint32_t* last) : ref_counter(1), vec(std::vector<uint32_t> (first, last)) {}
 
-my_vector::my_vector(size_t len, uint32_t x) : ref_counter(1) {
-    vec = std::vector<uint32_t> (len, x);
-}
+my_vector::my_vector(size_t len, uint32_t x) : ref_counter(1), vec(std::vector<uint32_t> (len, x)) {}
 
 uint32_t& my_vector::operator[] (size_t i) {
     return vec[i];
