@@ -43,20 +43,11 @@ buffer& buffer::operator= (buffer const& other) {
 }
 
 void buffer::resize(size_t new_size, uint32_t x) {
-    if (small) {
-        *this = buffer(new_size, x);
-    } else {
-        buffer tmp = (*this);
-        *this = buffer(new_size, x);
-        tmp.~buffer();
+    while (new_size > size_) {
+        push_back(x);
     }
-}
-
-buffer::buffer(size_t len) : size_(len), small(len <= MAX_STATIC) {
-    if (small) {
-        std::fill(static_vec, static_vec + size_, 0);
-    } else {
-        dynamic_vec = new my_vector(len);
+    while (new_size < size_) {
+        pop_back();
     }
 }
 
@@ -111,8 +102,9 @@ void buffer::push_back(uint32_t const& x) {
     } else if (size_ < MAX_STATIC) {
         static_vec[size_] = x;
     } else {
-        dynamic_vec = new my_vector(static_vec, size_);
-        dynamic_vec->push_back(x);
+        my_vector* tmp = new my_vector(static_vec, static_vec + size_);
+        tmp->push_back(x);
+        dynamic_vec = tmp;
         small = false;
     }
     size_++;

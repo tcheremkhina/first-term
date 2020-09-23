@@ -9,10 +9,9 @@
 struct buffer {
     buffer();
     buffer(buffer const& other);
-    buffer(size_t len, uint32_t x);
+    buffer(size_t len, uint32_t x = 0);
     buffer& operator= (buffer const& other);
     void resize(size_t new_size, uint32_t x = 0);
-    explicit buffer(size_t len);
     ~buffer();
     bool operator== (buffer const& other) const;
     void reverse();
