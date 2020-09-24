@@ -1,7 +1,7 @@
 #ifndef BIG_INTEGER_H
 #define BIG_INTEGER_H
 
-#include <iostream>
+#include <iosfwd>
 #include <functional>
 #include <vector>
 
@@ -62,7 +62,7 @@ private:
 
     friend std::string to_string(big_integer a);
     friend big_integer div_mod(big_integer &a, big_integer &b, bool mod);
-    friend uint32_t trial (big_integer &a, big_integer &b, size_t k, size_t m);
+    friend uint32_t trial (big_integer const& a, big_integer const& b, size_t k, size_t m);
     friend void print_data(big_integer x, std::string str); // need for debug only
 };
 

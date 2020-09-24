@@ -16,7 +16,7 @@ big_integer::big_integer(uint32_t a) : data_(1, a), sign_(false) {}
 
 big_integer::big_integer(int const& a) : data_(1, std::abs(static_cast<int64_t>(a))), sign_(a < 0) {}
 
-const big_integer NUM[11] = {big_integer(0), big_integer(1), big_integer(2),
+const big_integer NUM[10] = {big_integer(0), big_integer(1), big_integer(2),
                              big_integer(3), big_integer(4), big_integer(5),
                              big_integer(6), big_integer(7), big_integer(8),
                              big_integer(9)};
@@ -108,26 +108,30 @@ big_integer& big_integer::operator-=(big_integer const& a) {
     return *this;
 }
 
+bool sum_overflows_uint32(uint32_t a, uint32_t b) {
+    return UINT_MAX - a < b;
+}
+
 big_integer& big_integer::operator+=(big_integer const& a) {
     if (sign_ != a.sign_) {
         *this -= (-a);
         return *this;
     }
     size_t max_size = std::max(a.size(), size());
-    uint x = 0;
-    for (size_t i = 0; (i < a.size() || x) && i < max_size; i++) {
+    uint remainder = 0;
+    for (size_t i = 0; (i < a.size() || remainder) && i < max_size; i++) {
         if (i == size()) {
             data_.push_back(0);
         }
-        uint y = 0;
-        if (UINT_MAX - data_[i] < a.data(i) || UINT_MAX - data_[i] - a.data(i) < x) {
-            y = 1;
+        uint overflow = 0;
+        if (sum_overflows_uint32(data_[i], a.data(i)) || sum_overflows_uint32(data_[i] + a.data(i), remainder)) {
+            overflow = 1;
         }
-        data_[i] += (a.data(i) + x);
-        x = y;
+        data_[i] += (a.data(i) + remainder);
+        remainder = overflow;
     }
-    if (x) {
-        data_.push_back(x);
+    if (remainder) {
+        data_.push_back(remainder);
     }
     return *this;
 }
@@ -214,7 +218,7 @@ void big_integer::div_mod_short(uint b, bool mod) {
     del_zero();
 }
 
-uint32_t trial(big_integer &a, big_integer &b, size_t k, size_t m) {
+uint32_t trial(big_integer const& a, big_integer const& b, size_t k, size_t m) {
     assert(m + k - 2 >= 0);
     if (a.data(m + k) > b.data(m - 1) ||
     (a.data(m + k) == b.data(m - 1) && a.data(m + k - 1) >= b.data(m - 2))) {
@@ -495,7 +499,18 @@ bool operator<(big_integer const& a, big_integer const& b) {
 }
 
 bool operator<=(big_integer const& a, big_integer const& b) {
-    return (a < b || a == b);
+    if (a.sign_ != b.sign_) {
+        return a.sign_;
+    }
+    if (a.size() != b.size()) {
+        return (a.sign_ != (a.size() < b.size()));
+    }
+    for (int j = (int)a.size() - 1; j >= 0; j--) {
+        if (a.data_[j] != b.data_[j]) {
+            return (a.sign_ != (a.data_[j] < b.data_[j]));
+        }
+    }
+    return true;
 }
 
 bool operator>(big_integer const& a, big_integer const& b) {
