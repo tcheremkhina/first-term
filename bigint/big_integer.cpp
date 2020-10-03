@@ -499,18 +499,7 @@ bool operator<(big_integer const& a, big_integer const& b) {
 }
 
 bool operator<=(big_integer const& a, big_integer const& b) {
-    if (a.sign_ != b.sign_) {
-        return a.sign_;
-    }
-    if (a.size() != b.size()) {
-        return (a.sign_ != (a.size() < b.size()));
-    }
-    for (int j = (int)a.size() - 1; j >= 0; j--) {
-        if (a.data_[j] != b.data_[j]) {
-            return (a.sign_ != (a.data_[j] < b.data_[j]));
-        }
-    }
-    return true;
+    return !(b < a);
 }
 
 bool operator>(big_integer const& a, big_integer const& b) {
